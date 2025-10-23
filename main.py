@@ -11,7 +11,7 @@ from telegram.ext import (
 # ==============================
 # 🔹 تنظیمات اصلی
 # ==============================
-TOKEN = os.environ.get("TELEGRAM_TOKEN", "8475437543:AAG75xruJgLyAJnyD7WGsZlpsZu3dWs_ejE")  # توکن ربات
+TOKEN = os.environ.get("TELEGRAM_TOKEN", "8319360335:AAEHRBtRqhDdS-rHr1x9X5A1-AnfgJJTlko")  # توکن ربات
 ADMIN_ID = 677533280  # آیدی عددی ادمین (مثلاً 677533280)
 RESULTS_FILE = "results.csv"
 EXAM_DURATION = 15 * 60  # ۱۵ دقیقه
