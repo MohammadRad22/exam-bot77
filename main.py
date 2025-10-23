@@ -11,8 +11,8 @@ from telegram.ext import (
 # ==============================
 # 🔹 تنظیمات اصلی
 # ==============================
-TOKEN = os.environ.get("8475437543:AAG75xruJgLyAJnyD7WGsZlpsZu3dWs_ejE", "YOUR_BOT_TOKEN")  # توکن ربات
-ADMIN_ID = 677533280 # آیدی عددی ادمین (مثلاً 677533280)
+TOKEN = os.environ.get("TELEGRAM_TOKEN", "8475437543:AAG75xruJgLyAJnyD7WGsZlpsZu3dWs_ejE")  # توکن ربات
+ADMIN_ID = 677533280  # آیدی عددی ادمین (مثلاً 677533280)
 RESULTS_FILE = "results.csv"
 EXAM_DURATION = 15 * 60  # ۱۵ دقیقه
 
@@ -197,7 +197,7 @@ async def finish_exam(context: ContextTypes.DEFAULT_TYPE, user_id: int):
         f"📋 نتیجه آزمون جدید:\n\n"
         f"👤 نام: {name}\n"
         f"🎓 شماره دانشجویی: {student_id}\n"
-        f"🆔 کاربر: {user_id}\n"
+        f"�ID کاربر: {user_id}\n"
         f"📊 نمره: {data['score']} از {total}\n"
         f"درصد: {percent:.1f}%"
     )
@@ -216,7 +216,21 @@ async def main():
     app.add_handler(CallbackQueryHandler(button_handler))
 
     print("🚀 ربات در حال اجرا است...")
-    await app.run_polling()
+    # شروع polling
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    # نگه داشتن برنامه در حال اجرا
+    while True:
+        await asyncio.sleep(3600)  # خواب برای جلوگیری از اتمام حلقه
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        loop.run_until_complete(app.updater.stop())
+        loop.run_until_complete(app.stop())
+        loop.run_until_complete(app.shutdown())
+    finally:
+        loop.close()
