@@ -4,6 +4,7 @@ import csv
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
@@ -448,16 +449,20 @@ user_data = {}
 if not os.path.exists(RESULTS_FILE):
     with open(RESULTS_FILE, "w", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Name", "Student ID", "User ID", "Score", "Percent"])
+        writer.writerow(["Name", "Student ID", "User ID", "Score", "Percent", "Date", "Time"])
 
 # ==============================
 # 🔹 دستور /start
 # ==============================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if user_id in user_data and user_data[user_id].get("completed"):
+    
+    # اگر کاربر ادمین نیست و قبلاً آزمون را تکمیل کرده، اجازه شرکت مجدد نمی‌دهیم
+    if user_id != ADMIN_ID and user_id in user_data and user_data[user_id].get("completed"):
         await update.message.reply_text("⚠️ شما قبلاً در این آزمون شرکت کرده‌اید.")
         return
+    
+    # ریست داده‌های کاربر برای آزمون جدید
     user_data[user_id] = {"stage": "name"}
     await update.message.reply_text("👋 لطفاً نام و نام خانوادگی خود را وارد کنید:")
 
@@ -590,11 +595,14 @@ async def finish_exam(context: ContextTypes.DEFAULT_TYPE, user_id: int):
     percent = max((data["score"] / total) * 100, 0)
     name = data["name"]
     student_id = data["student_id"]
+    current_time = datetime.now()
+    date_str = current_time.strftime("%Y-%m-%d")
+    time_str = current_time.strftime("%H:%M:%S")
 
     # ذخیره در فایل CSV
     with open(RESULTS_FILE, "a", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow([name, student_id, user_id, data["score"], f"{percent:.1f}%"])
+        writer.writerow([name, student_id, user_id, data["score"], f"{percent:.1f}%", date_str, time_str])
 
     # پیام برای کاربر
     await context.bot.send_message(
@@ -609,7 +617,9 @@ async def finish_exam(context: ContextTypes.DEFAULT_TYPE, user_id: int):
         f"🎓 شماره دانشجویی: {student_id}\n"
         f"🆔 کاربر: {user_id}\n"
         f"📊 نمره: {data['score']} از {total}\n"
-        f"درصد: {percent:.1f}%"
+        f"درصد: {percent:.1f}%\n"
+        f"📅 تاریخ: {date_str}\n"
+        f"⏰ زمان: {time_str}"
     )
     try:
         await context.bot.send_message(chat_id=ADMIN_ID, text=msg)
