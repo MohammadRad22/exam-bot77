@@ -2,6 +2,8 @@ import asyncio
 import random
 import csv
 import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
@@ -15,6 +17,22 @@ TOKEN = os.environ.get("TELEGRAM_TOKEN", "8319360335:AAEHRBtRqhDdS-rHr1x9X5A1-An
 ADMIN_ID = 677533280  # آیدی عددی ادمین (مثلاً 677533280)
 RESULTS_FILE = "results.csv"
 EXAM_DURATION = 15 * 60  # ۱۵ دقیقه
+PORT = int(os.environ.get("PORT", 8080))  # پورت پیش‌فرض 8080 برای Render
+
+# ==============================
+# 🔹 سرور HTTP ساده برای Render
+# ==============================
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"Bot is running!")  # پاسخ ساده برای Render
+
+def run_http_server():
+    server = HTTPServer(("", PORT), SimpleHTTPRequestHandler)
+    print(f"🚀 سرور HTTP روی پورت {PORT} اجرا شد...")
+    server.serve_forever()
 
 # ==============================
 # 🔹 داده‌ها (سوالات)
@@ -602,12 +620,21 @@ async def finish_exam(context: ContextTypes.DEFAULT_TYPE, user_id: int):
 # 🔹 اجرای ربات
 # ==============================
 async def main():
+    # شروع سرور HTTP در یک نخ جداگانه
+    threading.Thread(target=run_http_server, daemon=True).start()
+
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
     print("🚀 ربات در حال اجرا است...")
+    # غیرفعال کردن Webhook
+    try:
+        await app.bot.delete_webhook(drop_pending_updates=True)
+        print("Webhook غیرفعال شد.")
+    except Exception as e:
+        print(f"خطا در غیرفعال کردن Webhook: {e}")
     # شروع polling
     await app.initialize()
     await app.start()
