@@ -197,7 +197,7 @@ async def finish_exam(context: ContextTypes.DEFAULT_TYPE, user_id: int):
         f"📋 نتیجه آزمون جدید:\n\n"
         f"👤 نام: {name}\n"
         f"🎓 شماره دانشجویی: {student_id}\n"
-        f"�ID کاربر: {user_id}\n"
+        f"🆔 کاربر: {user_id}\n"
         f"📊 نمره: {data['score']} از {total}\n"
         f"درصد: {percent:.1f}%"
     )
@@ -219,13 +219,15 @@ async def main():
     # شروع polling
     await app.initialize()
     await app.start()
-    await app.updater.start_polling()
+    await app.updater.start_polling(drop_pending_updates=True)
     # نگه داشتن برنامه در حال اجرا
     while True:
         await asyncio.sleep(3600)  # خواب برای جلوگیری از اتمام حلقه
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
+    # ایجاد حلقه رویداد جدید
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(main())
     except KeyboardInterrupt:
